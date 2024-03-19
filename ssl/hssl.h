@@ -43,6 +43,7 @@ typedef struct {
     const char* ca_path;
     short       verify_peer;
     short       endpoint; // HSSL_SERVER / HSSL_CLIENT
+    int         dtlsflg;
 } hssl_ctx_opt_t, hssl_ctx_init_param_t;
 
 BEGIN_EXTERN_C
@@ -81,6 +82,9 @@ HV_EXPORT int hssl_write(hssl_t ssl, const void* buf, int len);
 HV_EXPORT int hssl_close(hssl_t ssl);
 
 HV_EXPORT int hssl_set_sni_hostname(hssl_t ssl, const char* hostname);
+
+HV_EXPORT hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd);
+HV_EXPORT void hssl_free_dtls(hssl_t ssl);
 
 #ifdef WITH_OPENSSL
 HV_EXPORT int hssl_ctx_set_alpn_protos(hssl_ctx_t ssl_ctx, const unsigned char* protos, unsigned int protos_len);

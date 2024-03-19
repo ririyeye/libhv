@@ -476,12 +476,21 @@ int hio_set_ssl(hio_t* io, hssl_t ssl) {
 }
 
 int hio_set_ssl_ctx(hio_t* io, hssl_ctx_t ssl_ctx) {
-    io->io_type = HIO_TYPE_SSL;
+    if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
+        io->io_type = HIO_TYPE_DTLS;
+    }
+    else {
+        io->io_type = HIO_TYPE_SSL;
+    }
     io->ssl_ctx = ssl_ctx;
     return 0;
 }
 
 int hio_new_ssl_ctx(hio_t* io, hssl_ctx_opt_t* opt) {
+    if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
+        opt->dtlsflg = 1;
+    }
+
     hssl_ctx_t ssl_ctx = hssl_ctx_new(opt);
     if (ssl_ctx == NULL) return ERR_NEW_SSL_CTX;
     io->alloced_ssl_ctx = 1;

@@ -27,6 +27,8 @@ option(WITH_OPENSSL "with openssl library" OFF)
 option(WITH_GNUTLS  "with gnutls library"  OFF)
 option(WITH_MBEDTLS "with mbedtls library" OFF)
 
+option(WITH_DTLS "with dtls support" OFF)
+
 option(WITH_KCP "compile event/kcp" OFF)
 
 if(WIN32)
@@ -189,6 +191,11 @@ endif()
 if(WITH_KCP)
     set(CORE_SRCDIRS ${CORE_SRCDIRS} event/kcp)
 endif()
+
+if(WITH_DTLS)
+    set(CORE_SRCDIRS ${CORE_SRCDIRS} event/dtls)
+endif()
+
 set(LIBHV_SRCDIRS ${CORE_SRCDIRS} util)
 set(LIBHV_HEADERS hv.h hconfig.h hexport.h)
 set(LIBHV_HEADERS ${LIBHV_HEADERS} ${BASE_HEADERS} ${SSL_HEADERS} ${EVENT_HEADERS} ${UTIL_HEADERS})

@@ -8,6 +8,11 @@ void rudp_entry_free(rudp_entry_t* entry) {
 #if WITH_KCP
     kcp_release(&entry->kcp);
 #endif
+
+#if WITH_DTLS
+    dtls_release(&entry->dtls);
+#endif
+
     HV_FREE(entry);
 }
 
