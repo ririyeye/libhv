@@ -26,7 +26,7 @@ hssl_ctx_t hssl_ctx_new(hssl_ctx_opt_t* param) {
     }
 
     SSL_CTX* ctx = NULL;
-    if(param->dtlsflg) {
+    if(param && param->dtlsflg) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     ctx = SSL_CTX_new(DTLS_method());
 #else
@@ -194,12 +194,9 @@ int hssl_ctx_set_alpn_protos(hssl_ctx_t ssl_ctx, const unsigned char* protos, un
     return ret;
 }
 
-hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd) {
+hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd, const struct sockaddr* addr) {
     SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
     if (ssl == NULL) return NULL;
-    
-    BIO* bio = BIO_new_dgram(fd, BIO_NOCLOSE);
-    SSL_set_bio(ssl, bio, bio);
 
     return ssl;
 }

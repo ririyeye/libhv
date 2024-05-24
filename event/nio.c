@@ -264,8 +264,9 @@ static int __nio_read(hio_t* io, void* buf, int len) {
     case HIO_TYPE_DTLS:
     {
         socklen_t addrlen = sizeof(sockaddr_u);
-        nread = recvfrom(io->fd, buf, len, MSG_PEEK, io->peeraddr, &addrlen);
+        nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
         if(nread > 0) {
+            printf("recv len = %d\n", nread);
             nread = hssl_dtls_read(io, buf, nread);
         }
     }
@@ -379,7 +380,8 @@ write:
     char* buf = base + pbuf->offset;
     int len = pbuf->len - pbuf->offset;
     nwrite = __nio_write(io, buf, len);
-    // printd("write retval=%d\n", nwrite);
+
+    printf("write retval=%d , %d\n", len , nwrite);
     if (nwrite < 0) {
         err = socket_errno();
         if (err == EAGAIN || err == EINTR) {

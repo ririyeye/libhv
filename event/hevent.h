@@ -180,6 +180,7 @@ struct hio_s {
     void*       hovlp;          // for iocp/overlapio
 #endif
 
+    hio_side_e side;
 #if WITH_RUDP
     rudp_t          rudp;
 #if WITH_KCP

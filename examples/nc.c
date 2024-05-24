@@ -215,6 +215,22 @@ Examples: nc 127.0.0.1 80\n\
         if (sockio == NULL) {
             return -20;
         }
+#if WITH_DTLS
+        hio_enable_ssl(sockio);
+        hssl_ctx_opt_t ssl_param;
+        memset(&ssl_param, 0, sizeof(ssl_param));
+        ssl_param.ca_file = "cert/cacert.pem";
+        // ssl_param.key_file = "cert/server.key";
+        ssl_param.endpoint = HSSL_CLIENT;
+        if (hio_new_ssl_ctx(sockio, &ssl_param) != 0) {
+            fprintf(stderr, "hssl_ctx_new failed!\n");
+            return -30;
+        }
+#else
+            fprintf(stderr, "Please recompile WITH_KCP!\n");
+            exit(1);
+#endif
+
         if (protocol == 'k') {
 #if WITH_KCP
             static kcp_setting_t s_kcp_setting;

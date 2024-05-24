@@ -83,7 +83,7 @@ HV_EXPORT int hssl_close(hssl_t ssl);
 
 HV_EXPORT int hssl_set_sni_hostname(hssl_t ssl, const char* hostname);
 
-HV_EXPORT hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd);
+HV_EXPORT hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd, const struct sockaddr* addr);
 HV_EXPORT void hssl_free_dtls(hssl_t ssl);
 
 #ifdef WITH_OPENSSL

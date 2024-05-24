@@ -10,7 +10,10 @@ mkdir build
 cd build
 cmake ../ \
     -DCMAKE_INSTALL_PREFIX=${workPath} \
+    -DBUILD_SHARED=off \
     -DWITH_OPENSSL=on \
+    -DWITH_DTLS=on \
+    -DCMAKE_BUILD_TYPE="Debug"
 
 
 num=$(cat /proc/cpuinfo  | grep process | wc -l)

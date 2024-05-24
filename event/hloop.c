@@ -968,6 +968,7 @@ hio_t* hio_create_socket(hloop_t* loop, const char* host, int port, hio_type_e t
     io = hio_get(loop, sockfd);
     assert(io != NULL);
     io->io_type = type;
+    io->side = side;
     if (side == HIO_SERVER_SIDE) {
         hio_set_localaddr(io, &addr.sa, sockaddr_len(&addr));
         io->priority = HEVENT_HIGH_PRIORITY;
@@ -1021,4 +1022,8 @@ hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port) {
 
 hio_t* hloop_create_udp_client(hloop_t* loop, const char* host, int port) {
     return hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE);
+}
+
+hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port) {
+    return hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_CLIENT_SIDE);
 }

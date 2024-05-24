@@ -6,12 +6,29 @@
 
 #if WITH_DTLS
 
+#ifdef WITH_OPENSSL
+#include "openssl/ssl.h"
+#include "openssl/err.h"
+#endif
+
+typedef enum {
+    dtls_not_init = 0,
+    dtls_shakehand_start,
+    dtls_shakehand_ok,
+} dtls_step;
+
 typedef struct dtls_s {
-    int connected;
+    dtls_step sta;
+    int serverflg;
     hssl_t ssl_ctx;
     htimer_t* t_shake;
     sockaddr_u addr;
     hio_t* io;
+    int mtu;
+#ifdef WITH_OPENSSL
+    BIO* bio_recv;
+    BIO* bio_send;
+#endif
 } dtls_t;
 
 // NOTE: dtls_create in hio_get_dtls

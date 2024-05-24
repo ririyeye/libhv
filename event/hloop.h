@@ -431,6 +431,7 @@ HV_EXPORT hio_t* hloop_create_ssl_client (hloop_t* loop, const char* host, int p
 // @see examples/udp_echo_server.c
 HV_EXPORT hio_t* hloop_create_udp_server (hloop_t* loop, const char* host, int port);
 HV_EXPORT hio_t* hloop_create_dtls_server (hloop_t* loop, const char* host, int port);
+HV_EXPORT hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port);
 
 // @udp_server: hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE)
 // @see examples/nc.c
