@@ -6,7 +6,7 @@
 
 static int _dtls_output(dtls_t* dtls, const char* buf, int len) {
     int nsend = sendto(dtls->io->fd, buf, len, 0, hio_peeraddr(dtls->io), sizeof(sockaddr_u));
-    printf("sendto nsend=%d\n", nsend);
+    // printf("sendto nsend=%d\n", nsend);
     return nsend;
 }
 
@@ -80,7 +80,7 @@ HV_EXPORT int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
         dtls->sta = dtls_shakehand_start;
     }
 
-    while(readbytes > 0) {
+    while (readbytes > 0) {
         bytes = BIO_write(dtls->bio_recv, buf8, readbytes);
 
         if (bytes <= 0) {
@@ -94,51 +94,36 @@ HV_EXPORT int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
         if (!SSL_is_init_finished(dtls->ssl_ctx)) {
             bytes = SSL_accept(dtls->ssl_ctx);
             sta = SSL_get_error(dtls->ssl_ctx, bytes);
-            printf("%d\n", __LINE__);
             if (sta == SSL_ERROR_WANT_READ || sta == SSL_ERROR_WANT_WRITE) {
                 do {
-            printf("%d\n", __LINE__);
                     char sndtmp[dtls->mtu];
                     bytes = BIO_read(dtls->bio_send, sndtmp, dtls->mtu);
-            printf("%d\n", __LINE__);
                     if (bytes > 0) {
-            printf("%d\n", __LINE__);
                         _dtls_output(dtls, sndtmp, bytes);
                     }
                     else if (!BIO_should_retry(dtls->bio_send)) {
-            printf("%d\n", __LINE__);
                         goto final;
                     }
                 } while (bytes > 0);
-            printf("%d\n", __LINE__);
             }
-
         }
-        if(SSL_is_init_finished(dtls->ssl_ctx)) {
-            printf("%d\n", __LINE__);
+        if (SSL_is_init_finished(dtls->ssl_ctx)) {
             dtls->sta = dtls_shakehand_ok;
-            printf("dtls_shakehand_ok\n");
-            if(dtls->t_shake) {
+            if (dtls->t_shake) {
                 htimer_del(dtls->t_shake);
                 dtls->t_shake = NULL;
             }
         }
-            printf("%d\n", __LINE__);
-
         // handle data read
         do {
-            printf("%d\n", __LINE__);
 
             bytes = SSL_read(dtls->ssl_ctx, read_buf, total - read_len);
-            printf("%d ,,,, %d %p %d %d\n", __LINE__, bytes, read_buf, total, read_len);
             if (bytes > 0) {
-            printf("%d\n", __LINE__);
                 read_len += bytes;
             }
         } while (bytes > 0);
 
         sta = SSL_get_error(dtls->ssl_ctx, bytes);
-        printf("err sta = %d\n", sta);
         if (sta == SSL_ERROR_WANT_READ || sta == SSL_ERROR_WANT_WRITE) {
             do {
                 char sndtmp[dtls->mtu];
@@ -148,8 +133,6 @@ HV_EXPORT int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
                     printf("222 sendlen = %d\n", len);
                 }
                 else if (!BIO_should_retry(dtls->bio_send)) {
-            printf("%d\n", __LINE__);
-
                     goto final;
                 }
             } while (bytes > 0);
@@ -159,7 +142,7 @@ HV_EXPORT int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
 final:
     if (read_len > 0) {
         memcpy(buf, read_buf, read_len);
-                printf("get dat len = %d\n", read_len);
+        // printf("get dat len = %d\n", read_len);
         return read_len;
     }
 
@@ -170,26 +153,38 @@ HV_EXPORT int hssl_dtls_write(hio_t* io, const void* buf, size_t len) {
 
     dtls_t* dtls = hio_get_dtls(io);
 
-    // if (io->side == HIO_CLIENT_SIDE && dtls->connected == 0) {
+    char* buf8 = (char*)buf;
 
-    //     if (dtls->t_shake) {
-    //         htimer_reset(dtls->t_shake, 1000);
-    //     }
+    int sendlen = 0;
+    char tmpbuf[2048];
+    int bytes;
+    int sta;
 
-    //     int ret = hssl_connect(dtls->ssl_ctx);
-    //     printf("2 connect = %d\n", ret);
-    //     if (0 == ret) {
-    //         htimer_del(dtls->t_shake);
-    //         dtls->connected = 1;
-    //         hio_del(io, HV_WRITE);
-    //         printf("2 handshake = ok\n");
-    //     }
-    //     errno = EAGAIN;
-    //     return -1;
-    // }
-    // else {
-    //     return hssl_write(dtls->ssl_ctx, buf, len);
-    // }
+    if (io->side == HIO_SERVER_SIDE) {
+        if (dtls->sta == dtls_not_init) {
+            return -1;
+        }
+
+        // while data remain
+        while (len > 0) {
+            int bytes = SSL_write(dtls->ssl_ctx, buf8, len);
+            int sta = SSL_get_error(dtls->ssl_ctx, bytes);
+
+            if (bytes > 0) {
+                len -= bytes;
+                buf8 += bytes;
+                sendlen += bytes;
+
+                do {
+                    bytes = BIO_read(dtls->bio_send, tmpbuf, dtls->mtu);
+                    if (bytes) {
+                        _dtls_output(dtls, tmpbuf, bytes);
+                    }
+                } while (bytes > 0);
+            }
+        }
+        return sendlen;
+    }
     return -1;
 }
 
