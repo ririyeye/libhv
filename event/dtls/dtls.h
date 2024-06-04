@@ -30,11 +30,10 @@ typedef struct dtls_s {
 // NOTE: dtls_create in hio_get_dtls
 void dtls_release(dtls_t* dtls);
 
-int hssl_dtls_read(hio_t *io, void* buf, size_t len);
-int hssl_dtls_write(hio_t *io, const void* buf, size_t len);
+int hssl_dtls_read_accept(hio_t *io, void* buf, size_t len);
 
-int hssl_dtls_read_node(hio_t* io, void* buf, int len);
-int hssl_dtls_write_node(hio_t* io, const void* buf, int len);
+int hssl_dtls_read(hio_t* io, void* buf, int len);
+int hssl_dtls_write(hio_t* io, const void* buf, int len);
 
 #endif
 

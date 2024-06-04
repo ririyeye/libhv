@@ -1019,8 +1019,15 @@ hio_t* hloop_create_udp_server(hloop_t* loop, const char* host, int port) {
 void set_dtls_ctx(hio_t* io);
 
 hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port, haccept_cb accept_cb) {
-    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_SERVER_SIDE);
+    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS_ACCEPT, HIO_SERVER_SIDE);
     hio_setcb_accept(io, accept_cb);
+    set_dtls_ctx(io);
+    return io;
+}
+
+hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port, hconnect_cb connect_cb) {
+    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_CLIENT_SIDE);
+    hio_setcb_connect(io, connect_cb);
     set_dtls_ctx(io);
     return io;
 }
@@ -1029,6 +1036,3 @@ hio_t* hloop_create_udp_client(hloop_t* loop, const char* host, int port) {
     return hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE);
 }
 
-hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port) {
-    return hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_CLIENT_SIDE);
-}

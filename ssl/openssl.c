@@ -194,7 +194,7 @@ int hssl_ctx_set_alpn_protos(hssl_ctx_t ssl_ctx, const unsigned char* protos, un
     return ret;
 }
 
-hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx, int fd, const struct sockaddr* addr) {
+hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx) {
     SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
     if (ssl == NULL) return NULL;
 

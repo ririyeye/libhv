@@ -100,7 +100,7 @@ typedef enum {
     HIO_TYPE_UDP        = 0x00001000,
     HIO_TYPE_KCP        = 0x00002000,
     HIO_TYPE_DTLS       = 0x00010000,
-    HIO_TYPE_DTLS_NODE  = 0x00020000,
+    HIO_TYPE_DTLS_ACCEPT= 0x00020000,
     HIO_TYPE_SOCK_DGRAM = 0x000FF000,
 
     HIO_TYPE_TCP        = 0x00100000,
@@ -432,7 +432,7 @@ HV_EXPORT hio_t* hloop_create_ssl_client (hloop_t* loop, const char* host, int p
 // @see examples/udp_echo_server.c
 HV_EXPORT hio_t* hloop_create_udp_server (hloop_t* loop, const char* host, int port);
 HV_EXPORT hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port, haccept_cb accept_cb);
-HV_EXPORT hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port);
+HV_EXPORT hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port, hconnect_cb connect_cb);
 
 // @udp_server: hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE)
 // @see examples/nc.c

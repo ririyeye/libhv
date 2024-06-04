@@ -4,10 +4,6 @@
 #include "dtls.h"
 #if WITH_DTLS
 
-typedef struct {
-    hssl_t ssl_ctx;
-} dtls_node;
-
 dtls_t* hio_get_dtls(hio_t* io);
 
 static void on_dtls_master_recv(hio_t* io, void* buf, int readbytes) {}
@@ -15,6 +11,9 @@ static void on_dtls_master_recv(hio_t* io, void* buf, int readbytes) {}
 void set_dtls_ctx(hio_t* io) {
     hio_setcb_read(io, on_dtls_master_recv);
     hio_read_start(io);
+    if(io->side == HIO_CLIENT_SIDE) {
+        io->ssl_ctx = hssl_new_dtls(io->ssl_ctx);
+    }
 }
 
 static int _dtls_output(dtls_t* dtls, const char* buf, int len) {
@@ -54,7 +53,7 @@ dtls_t* hio_get_dtls(hio_t* io) {
     memcpy(&dtls->addr, hio_peeraddr(io), sizeof(sockaddr_u));
 
     // set ssl ctx
-    dtls->ssl_ctx = hssl_new_dtls(io->ssl_ctx, io->fd, (struct sockaddr*)&dtls->addr);
+    dtls->ssl_ctx = hssl_new_dtls(io->ssl_ctx);
 
     // set bio
     BIO* bio_recv = BIO_new(BIO_s_mem());
@@ -99,7 +98,7 @@ static hio_t* hio_create_socket_node(hloop_t* loop, sockaddr_u* local_addr, sock
 
     io = hio_get(loop, sockfd);
 
-    io->io_type = HIO_TYPE_DTLS_NODE;
+    io->io_type = HIO_TYPE_DTLS;
     io->side = HIO_SERVER_SIDE;
 
     hio_set_localaddr(io, &local_addr->sa, sockaddr_len(local_addr));
@@ -107,7 +106,7 @@ static hio_t* hio_create_socket_node(hloop_t* loop, sockaddr_u* local_addr, sock
     return io;
 }
 
-int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
+int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
 
     dtls_t* dtls = hio_get_dtls(io);
 
@@ -179,17 +178,15 @@ int hssl_dtls_read(hio_t* io, void* buf, size_t total) {
             if (!newio) {
                 printf("hio_create_socket_node err \n");
             }
-            dtls_node* node = malloc(sizeof(dtls_node));
             printf("new fd = %d \n", newio->fd);
-            newio->ssl_ctx = node;
-            node->ssl_ctx = dtls->ssl_ctx;
+            newio->ssl_ctx = dtls->ssl_ctx;
             dtls->ssl_ctx = NULL;
 
             BIO* bio_d = BIO_new_dgram(newio->fd, BIO_NOCLOSE);
             BIO_ctrl_set_connected(bio_d, remote_addr);
             BIO_socket_nbio(newio->fd, 1);
 
-            SSL_set_bio(node->ssl_ctx, bio_d, bio_d);
+            SSL_set_bio(newio->ssl_ctx, bio_d, bio_d);
             io->accept_cb(newio);
 
             return -1;
@@ -199,59 +196,12 @@ final:
     return -1;
 }
 
-int hssl_dtls_read_node(hio_t* io, void* buf, int len) {
-    dtls_node* node = io->ssl_ctx;
-    return SSL_read(node->ssl_ctx, buf, len);
+int hssl_dtls_read(hio_t* io, void* buf, int len) {
+    return SSL_read(io->ssl_ctx, buf, len);
 }
 
-int hssl_dtls_write_node(hio_t* io, const void* buf, int len) {
-    dtls_node* node = io->ssl_ctx;
-    return SSL_write(node->ssl_ctx, buf, len);
-}
-
-int hssl_dtls_write(hio_t* io, const void* buf, size_t len) {
-    if (io->io_type == HIO_TYPE_DTLS_NODE) {
-        dtls_node* node = io->ssl_ctx;
-        return SSL_write(node->ssl_ctx, buf, len);
-    }
-
-    return -1;
-
-    dtls_t* dtls = hio_get_dtls(io);
-
-    char* buf8 = (char*)buf;
-
-    int sendlen = 0;
-    char tmpbuf[2048];
-    int bytes;
-    int sta;
-
-    if (io->side == HIO_SERVER_SIDE) {
-        if (dtls->sta == dtls_not_init) {
-            return -1;
-        }
-
-        // while data remain
-        while (len > 0) {
-            int bytes = SSL_write(dtls->ssl_ctx, buf8, len);
-            int sta = SSL_get_error(dtls->ssl_ctx, bytes);
-
-            if (bytes > 0) {
-                len -= bytes;
-                buf8 += bytes;
-                sendlen += bytes;
-
-                do {
-                    bytes = BIO_read(SSL_get_wbio(dtls->ssl_ctx), tmpbuf, dtls->mtu);
-                    if (bytes) {
-                        _dtls_output(dtls, tmpbuf, bytes);
-                    }
-                } while (bytes > 0);
-            }
-        }
-        return sendlen;
-    }
-    return -1;
+int hssl_dtls_write(hio_t* io, const void* buf, int len) {
+    return SSL_write(io->ssl_ctx, buf, len);
 }
 
 #endif

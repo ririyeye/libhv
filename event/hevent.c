@@ -454,7 +454,7 @@ void hio_set_peeraddr (hio_t* io, struct sockaddr* addr, int addrlen) {
 
 int hio_enable_ssl(hio_t* io) {
     if(io->io_type & HIO_TYPE_UDP) {
-        io->io_type = HIO_TYPE_DTLS;
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
     } else {
         io->io_type = HIO_TYPE_SSL;
     }
@@ -475,7 +475,7 @@ hssl_ctx_t hio_get_ssl_ctx(hio_t* io) {
 
 int hio_set_ssl(hio_t* io, hssl_t ssl) {
     if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
-        io->io_type = HIO_TYPE_DTLS;
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
     } else {
         io->io_type = HIO_TYPE_SSL;
     }
@@ -485,7 +485,7 @@ int hio_set_ssl(hio_t* io, hssl_t ssl) {
 
 int hio_set_ssl_ctx(hio_t* io, hssl_ctx_t ssl_ctx) {
     if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
-        io->io_type = HIO_TYPE_DTLS;
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
     }
     else {
         io->io_type = HIO_TYPE_SSL;

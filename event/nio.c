@@ -262,15 +262,15 @@ static int __nio_read(hio_t* io, void* buf, int len) {
         nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
     }
         break;
-    case HIO_TYPE_DTLS: {
+    case HIO_TYPE_DTLS_ACCEPT: {
         socklen_t addrlen = sizeof(sockaddr_u);
         nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
         if (nread > 0) {
-            nread = hssl_dtls_read(io, buf, nread);
+            nread = hssl_dtls_read_accept(io, buf, nread);
         }
     } break;
-    case HIO_TYPE_DTLS_NODE: {
-        nread = hssl_dtls_read_node(io, buf, len);
+    case HIO_TYPE_DTLS: {
+        nread = hssl_dtls_read(io, buf, len);
     } break;
     default:
         nread = read(io->fd, buf, len);
@@ -300,11 +300,12 @@ static int __nio_write(hio_t* io, const void* buf, int len) {
     case HIO_TYPE_IP:
         nwrite = sendto(io->fd, buf, len, 0, io->peeraddr, SOCKADDR_LEN(io->peeraddr));
         break;
-    case HIO_TYPE_DTLS:
-        nwrite = hssl_dtls_write(io, buf, len);
+    case HIO_TYPE_DTLS_ACCEPT:
+        printf("write operation no support under accept stage\n");
+        nwrite = -1;
         break;
-    case HIO_TYPE_DTLS_NODE: {
-        nwrite = hssl_dtls_write_node(io, buf, len);
+    case HIO_TYPE_DTLS: {
+        nwrite = hssl_dtls_write(io, buf, len);
     } break;
     default:
         nwrite = write(io->fd, buf, len);
