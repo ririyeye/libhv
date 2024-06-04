@@ -6,6 +6,7 @@
 #include "hlog.h"
 #include "herr.h"
 #include "hthread.h"
+#include "dtls/dtls.h"
 
 static void __connect_timeout_cb(htimer_t* timer) {
     hio_t* io = (hio_t*)timer->privdata;
@@ -261,16 +262,16 @@ static int __nio_read(hio_t* io, void* buf, int len) {
         nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
     }
         break;
-    case HIO_TYPE_DTLS:
-    {
+    case HIO_TYPE_DTLS: {
         socklen_t addrlen = sizeof(sockaddr_u);
         nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
-        if(nread > 0) {
-            printf("recv len = %d\n", nread);
+        if (nread > 0) {
             nread = hssl_dtls_read(io, buf, nread);
         }
-    }
-        break;
+    } break;
+    case HIO_TYPE_DTLS_NODE: {
+        nread = hssl_dtls_read_node(io, buf, len);
+    } break;
     default:
         nread = read(io->fd, buf, len);
         break;
@@ -302,6 +303,9 @@ static int __nio_write(hio_t* io, const void* buf, int len) {
     case HIO_TYPE_DTLS:
         nwrite = hssl_dtls_write(io, buf, len);
         break;
+    case HIO_TYPE_DTLS_NODE: {
+        nwrite = hssl_dtls_write_node(io, buf, len);
+    } break;
     default:
         nwrite = write(io->fd, buf, len);
         break;

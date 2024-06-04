@@ -21,7 +21,6 @@
  *
  */
 #define TEST_KCP 0
-#define TEST_SSL 1
 
 static void on_recvfrom(hio_t* io, void* buf, int readbytes) {
     printf("on_recvfrom fd=%d readbytes=%d\n", hio_fd(io), readbytes);
@@ -59,30 +58,13 @@ int main(int argc, char** argv) {
 #endif
 
     hloop_t* loop = hloop_new(0);
-#if TEST_SSL
-    hio_t* io = hloop_create_dtls_server(loop, host, port);
-#else
     hio_t* io = hloop_create_udp_server(loop, host, port);
-#endif
     if (io == NULL) {
         return -20;
     }
 #if TEST_KCP
     hio_set_kcp(io, NULL);
 #endif
-
-#if TEST_SSL
-    hssl_ctx_opt_t ssl_param;
-    memset(&ssl_param, 0, sizeof(ssl_param));
-    ssl_param.crt_file = "cert/server.crt";
-    ssl_param.key_file = "cert/server.key";
-    ssl_param.endpoint = HSSL_SERVER;
-    if (hio_new_ssl_ctx(io, &ssl_param) != 0) {
-        fprintf(stderr, "hssl_ctx_new failed!\n");
-        return -30;
-    }
-#endif
-
     hio_setcb_read(io, on_recvfrom);
     hio_read(io);
     hloop_run(loop);

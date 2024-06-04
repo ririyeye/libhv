@@ -21,7 +21,8 @@
  * @client  bin/nc -s 127.0.0.1 1234
  *
  */
-#define TEST_SSL        0
+#define TEST_SSL        1
+#define TEST_USE_DTLS   1
 #define TEST_READ_ONCE  0
 #define TEST_READLINE   0
 #define TEST_READSTRING 0
@@ -117,7 +118,11 @@ int main(int argc, char** argv) {
 
     hloop_t* loop = hloop_new(0);
 #if TEST_SSL
+#if TEST_USE_DTLS
+    hio_t* listenio = hloop_create_dtls_server(loop, host, port, on_accept);
+#else
     hio_t* listenio = hloop_create_ssl_server(loop, host, port, on_accept);
+#endif
 #else
     hio_t* listenio = hloop_create_tcp_server(loop, host, port, on_accept);
 #endif
