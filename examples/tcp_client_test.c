@@ -14,7 +14,8 @@
 #include "hbase.h"
 #include "herr.h"
 
-#define TEST_SSL        0
+#define TEST_SSL        1
+#define TEST_DTLS       1
 #define TEST_UNPACK     0
 #define TEST_RECONNECT  1
 
@@ -180,7 +181,11 @@ int tcp_client_connect(tcp_client_t* cli, const char* host, int port, int ssl) {
     hv_strncpy(cli->host, host, sizeof(cli->host));
     cli->port = port;
     cli->ssl = ssl;
+#if TEST_DTLS
+    hio_t* io = hio_create_socket(cli->loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE);
+#else
     hio_t* io = hio_create_socket(cli->loop, host, port, HIO_TYPE_TCP, HIO_CLIENT_SIDE);
+#endif
     if (io == NULL) return -1;
     if (ssl) {
         if (cli->ssl_ctx) {

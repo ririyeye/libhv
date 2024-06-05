@@ -454,7 +454,11 @@ void hio_set_peeraddr (hio_t* io, struct sockaddr* addr, int addrlen) {
 
 int hio_enable_ssl(hio_t* io) {
     if(io->io_type & HIO_TYPE_UDP) {
-        io->io_type = HIO_TYPE_DTLS_ACCEPT;
+        if(io->side == HIO_SERVER_SIDE) {
+            io->io_type = HIO_TYPE_DTLS_ACCEPT;
+        } else {
+            io->io_type = HIO_TYPE_DTLS_CONECT;
+        }
     } else {
         io->io_type = HIO_TYPE_SSL;
     }

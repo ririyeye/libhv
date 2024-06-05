@@ -19,8 +19,7 @@ typedef enum {
 
 typedef struct dtls_s {
     dtls_step sta;
-    int serverflg;
-    hssl_t ssl_ctx;
+    hssl_t ssl;
     htimer_t* t_shake;
     sockaddr_u addr;
     hio_t* io;
@@ -31,9 +30,6 @@ typedef struct dtls_s {
 void dtls_release(dtls_t* dtls);
 
 int hssl_dtls_read_accept(hio_t *io, void* buf, size_t len);
-
-int hssl_dtls_read(hio_t* io, void* buf, int len);
-int hssl_dtls_write(hio_t* io, const void* buf, int len);
 
 #endif
 

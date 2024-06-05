@@ -9,10 +9,16 @@ dtls_t* hio_get_dtls(hio_t* io);
 static void on_dtls_master_recv(hio_t* io, void* buf, int readbytes) {}
 
 void set_dtls_ctx(hio_t* io) {
-    hio_setcb_read(io, on_dtls_master_recv);
     hio_read_start(io);
-    if(io->side == HIO_CLIENT_SIDE) {
-        io->ssl_ctx = hssl_new_dtls(io->ssl_ctx);
+    if (io->side == HIO_CLIENT_SIDE) {
+        io->ssl = hssl_new_dtls(io->ssl_ctx);
+        BIO* bio = BIO_new_dgram(io->fd, BIO_NOCLOSE);
+        BIO_ctrl_set_connected(bio, io->peeraddr);
+        BIO_socket_nbio(io->fd, 1);
+        SSL_set_bio(io->ssl, bio, bio);
+    }
+    else {
+        hio_setcb_read(io, on_dtls_master_recv);
     }
 }
 
@@ -23,7 +29,7 @@ static int _dtls_output(dtls_t* dtls, const char* buf, int len) {
 }
 
 void dtls_release(dtls_t* dtls) {
-    hssl_free_dtls(dtls->ssl_ctx);
+    hssl_free_dtls(dtls->ssl);
     if (dtls->t_shake) {
         htimer_del(dtls->t_shake);
     }
@@ -44,7 +50,7 @@ dtls_t* hio_get_dtls(hio_t* io) {
     assert(rudp != NULL);
     dtls_t* dtls = &rudp->dtls;
 
-    if (dtls->ssl_ctx != NULL) {
+    if (dtls->ssl != NULL) {
         return dtls;
     }
 
@@ -53,7 +59,7 @@ dtls_t* hio_get_dtls(hio_t* io) {
     memcpy(&dtls->addr, hio_peeraddr(io), sizeof(sockaddr_u));
 
     // set ssl ctx
-    dtls->ssl_ctx = hssl_new_dtls(io->ssl_ctx);
+    dtls->ssl = hssl_new_dtls(io->ssl_ctx);
 
     // set bio
     BIO* bio_recv = BIO_new(BIO_s_mem());
@@ -62,7 +68,7 @@ dtls_t* hio_get_dtls(hio_t* io) {
     BIO_set_mem_eof_return(bio_recv, -1);
     BIO_set_mem_eof_return(bio_send, -1);
 
-    SSL_set_bio(dtls->ssl_ctx, bio_recv, bio_send);
+    SSL_set_bio(dtls->ssl, bio_recv, bio_send);
 
     dtls->t_shake = NULL;
     dtls->mtu = 1024;
@@ -126,7 +132,7 @@ int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
     }
 
     while (readbytes > 0) {
-        bytes = BIO_write(SSL_get_rbio(dtls->ssl_ctx), buf8, readbytes);
+        bytes = BIO_write(SSL_get_rbio(dtls->ssl), buf8, readbytes);
 
         if (bytes <= 0) {
             return -1;
@@ -136,30 +142,30 @@ int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
         readbytes -= bytes;
 
         // handle handshake
-        if (!SSL_is_init_finished(dtls->ssl_ctx)) {
-            bytes = SSL_accept(dtls->ssl_ctx);
-            sta = SSL_get_error(dtls->ssl_ctx, bytes);
+        if (!SSL_is_init_finished(dtls->ssl)) {
+            bytes = SSL_accept(dtls->ssl);
+            sta = SSL_get_error(dtls->ssl, bytes);
             if (sta == SSL_ERROR_WANT_READ || sta == SSL_ERROR_WANT_WRITE) {
                 do {
                     char sndtmp[dtls->mtu];
-                    bytes = BIO_read(SSL_get_wbio(dtls->ssl_ctx), sndtmp, dtls->mtu);
+                    bytes = BIO_read(SSL_get_wbio(dtls->ssl), sndtmp, dtls->mtu);
                     if (bytes > 0) {
                         _dtls_output(dtls, sndtmp, bytes);
                     }
-                    else if (!BIO_should_retry(SSL_get_wbio(dtls->ssl_ctx))) {
+                    else if (!BIO_should_retry(SSL_get_wbio(dtls->ssl))) {
                         goto final;
                     }
                 } while (bytes > 0);
             }
         }
-        if (SSL_is_init_finished(dtls->ssl_ctx)) {
+        if (SSL_is_init_finished(dtls->ssl)) {
             char test[1024];
-            bytes = SSL_read(dtls->ssl_ctx, test, 1024);
-            sta = SSL_get_error(dtls->ssl_ctx, bytes);
+            bytes = SSL_read(dtls->ssl, test, 1024);
+            sta = SSL_get_error(dtls->ssl, bytes);
             if (sta == SSL_ERROR_WANT_READ || sta == SSL_ERROR_WANT_WRITE) {
                 do {
                     char sndtmp[dtls->mtu];
-                    bytes = BIO_read(SSL_get_wbio(dtls->ssl_ctx), sndtmp, dtls->mtu);
+                    bytes = BIO_read(SSL_get_wbio(dtls->ssl), sndtmp, dtls->mtu);
                     if (bytes > 0) {
                         _dtls_output(dtls, sndtmp, bytes);
                     }
@@ -179,29 +185,24 @@ int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
                 printf("hio_create_socket_node err \n");
             }
             printf("new fd = %d \n", newio->fd);
-            newio->ssl_ctx = dtls->ssl_ctx;
-            dtls->ssl_ctx = NULL;
+            newio->ssl = dtls->ssl;
 
             BIO* bio_d = BIO_new_dgram(newio->fd, BIO_NOCLOSE);
             BIO_ctrl_set_connected(bio_d, remote_addr);
             BIO_socket_nbio(newio->fd, 1);
 
-            SSL_set_bio(newio->ssl_ctx, bio_d, bio_d);
+            SSL_set_bio(newio->ssl, bio_d, bio_d);
             io->accept_cb(newio);
+
+            dtls->io = NULL;
+            dtls->ssl = NULL;
+            hio_close_rudp(io, (struct sockaddr*)&dtls->addr);
 
             return -1;
         }
     }
 final:
     return -1;
-}
-
-int hssl_dtls_read(hio_t* io, void* buf, int len) {
-    return SSL_read(io->ssl_ctx, buf, len);
-}
-
-int hssl_dtls_write(hio_t* io, const void* buf, int len) {
-    return SSL_write(io->ssl_ctx, buf, len);
 }
 
 #endif

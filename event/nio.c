@@ -94,6 +94,9 @@ static void ssl_client_handshake(hio_t* io) {
         // handshake finish
         hio_del(io, HV_READ);
         printd("ssl handshake finished.\n");
+        if (io->io_type == HIO_TYPE_DTLS_CONECT) {
+            io->io_type = HIO_TYPE_DTLS;
+        }
         __connect_cb(io);
     }
     else if (ret == HSSL_WANT_READ) {
@@ -175,6 +178,8 @@ accept_error:
     // hio_close(io);
 }
 
+void set_dtls_ctx(hio_t* io);
+
 static void nio_connect(hio_t* io) {
     // printd("nio_connect connfd=%d\n", io->fd);
     socklen_t addrlen = sizeof(sockaddr_u);
@@ -187,7 +192,7 @@ static void nio_connect(hio_t* io) {
         addrlen = sizeof(sockaddr_u);
         getsockname(io->fd, io->localaddr, &addrlen);
 
-        if (io->io_type == HIO_TYPE_SSL) {
+        if (io->io_type == HIO_TYPE_SSL || io->io_type == HIO_TYPE_DTLS_CONECT) {
             if (io->ssl == NULL) {
                 // io->ssl_ctx > g_ssl_ctx > hssl_ctx_new
                 hssl_ctx_t ssl_ctx = NULL;
@@ -196,19 +201,30 @@ static void nio_connect(hio_t* io) {
                 } else if (g_ssl_ctx) {
                     ssl_ctx = g_ssl_ctx;
                 } else {
-                    io->ssl_ctx = ssl_ctx = hssl_ctx_new(NULL);
+                    hssl_ctx_opt_t* par = NULL;
+                    hssl_ctx_opt_t tmppar = {0};
+                    if(io->io_type == HIO_TYPE_DTLS_CONECT) {
+                        tmppar.dtlsflg = 1;
+                        par = &tmppar;
+                    }
+                    io->ssl_ctx = ssl_ctx = hssl_ctx_new(par);
                     io->alloced_ssl_ctx = 1;
                 }
                 if (ssl_ctx == NULL) {
                     io->error = ERR_NEW_SSL_CTX;
                     goto connect_error;
                 }
-                hssl_t ssl = hssl_new(ssl_ctx, io->fd);
-                if (ssl == NULL) {
-                    io->error = ERR_NEW_SSL;
-                    goto connect_error;
+                hssl_t ssl;
+                if(io->io_type == HIO_TYPE_SSL) {
+                    ssl = hssl_new(ssl_ctx, io->fd);
+                    if (ssl == NULL) {
+                        io->error = ERR_NEW_SSL;
+                        goto connect_error;
+                    }
+                    io->ssl = ssl;
+                } else {
+                    set_dtls_ctx(io);
                 }
-                io->ssl = ssl;
             }
             if (io->hostname) {
                 hssl_set_sni_hostname(io->ssl, io->hostname);
@@ -269,8 +285,12 @@ static int __nio_read(hio_t* io, void* buf, int len) {
             nread = hssl_dtls_read_accept(io, buf, nread);
         }
     } break;
+    case HIO_TYPE_DTLS_CONECT: {
+        ssl_client_handshake(io);
+        nread = hssl_read(io->ssl, buf, len);
+    } break;
     case HIO_TYPE_DTLS: {
-        nread = hssl_dtls_read(io, buf, len);
+        nread = hssl_read(io->ssl, buf, len);
     } break;
     default:
         nread = read(io->fd, buf, len);
@@ -305,7 +325,7 @@ static int __nio_write(hio_t* io, const void* buf, int len) {
         nwrite = -1;
         break;
     case HIO_TYPE_DTLS: {
-        nwrite = hssl_dtls_write(io, buf, len);
+        nwrite = hssl_write(io->ssl, buf, len);
     } break;
     default:
         nwrite = write(io->fd, buf, len);

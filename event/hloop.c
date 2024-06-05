@@ -1026,7 +1026,7 @@ hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port, hacce
 }
 
 hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port, hconnect_cb connect_cb) {
-    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_CLIENT_SIDE);
+    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS_CONECT, HIO_CLIENT_SIDE);
     hio_setcb_connect(io, connect_cb);
     set_dtls_ctx(io);
     return io;
