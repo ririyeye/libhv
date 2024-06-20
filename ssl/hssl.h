@@ -83,9 +83,6 @@ HV_EXPORT int hssl_close(hssl_t ssl);
 
 HV_EXPORT int hssl_set_sni_hostname(hssl_t ssl, const char* hostname);
 
-HV_EXPORT hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx);
-HV_EXPORT void hssl_free_dtls(hssl_t ssl);
-
 #ifdef WITH_OPENSSL
 HV_EXPORT int hssl_ctx_set_alpn_protos(hssl_ctx_t ssl_ctx, const unsigned char* protos, unsigned int protos_len);
 #endif

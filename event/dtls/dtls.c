@@ -4,22 +4,13 @@
 #include "dtls.h"
 #if WITH_DTLS
 
-dtls_t* hio_get_dtls(hio_t* io);
-
 static void on_dtls_master_recv(hio_t* io, void* buf, int readbytes) {}
 
-void set_dtls_ctx(hio_t* io) {
-    hio_read_start(io);
-    if (io->side == HIO_CLIENT_SIDE) {
-        io->ssl = hssl_new_dtls(io->ssl_ctx);
-        BIO* bio = BIO_new_dgram(io->fd, BIO_NOCLOSE);
-        BIO_ctrl_set_connected(bio, io->peeraddr);
-        BIO_socket_nbio(io->fd, 1);
-        SSL_set_bio(io->ssl, bio, bio);
-    }
-    else {
-        hio_setcb_read(io, on_dtls_master_recv);
-    }
+void set_dtls_ctx_fd(hio_t* io) {
+    BIO* bio = BIO_new_dgram(io->fd, BIO_NOCLOSE);
+    BIO_ctrl_set_connected(bio, io->peeraddr);
+    BIO_socket_nbio(io->fd, 1);
+    SSL_set_bio(io->ssl, bio, bio);
 }
 
 static int _dtls_output(dtls_t* dtls, const char* buf, int len) {
@@ -29,7 +20,7 @@ static int _dtls_output(dtls_t* dtls, const char* buf, int len) {
 }
 
 void dtls_release(dtls_t* dtls) {
-    hssl_free_dtls(dtls->ssl);
+    hssl_free(dtls->ssl);
     if (dtls->t_shake) {
         htimer_del(dtls->t_shake);
     }
@@ -59,7 +50,7 @@ dtls_t* hio_get_dtls(hio_t* io) {
     memcpy(&dtls->addr, hio_peeraddr(io), sizeof(sockaddr_u));
 
     // set ssl ctx
-    dtls->ssl = hssl_new_dtls(io->ssl_ctx);
+    dtls->ssl = hssl_new(io->ssl_ctx, -1);
 
     // set bio
     BIO* bio_recv = BIO_new(BIO_s_mem());
@@ -113,7 +104,6 @@ static hio_t* hio_create_socket_node(hloop_t* loop, sockaddr_u* local_addr, sock
 }
 
 int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
-
     dtls_t* dtls = hio_get_dtls(io);
 
     char* buf8 = (char*)buf;
@@ -122,7 +112,7 @@ int hssl_dtls_read_accept(hio_t* io, void* buf, size_t total) {
     int bytes;
     int sta;
 
-    if (io->side == HIO_SERVER_SIDE && dtls->sta == dtls_not_init) {
+    if (dtls->sta == dtls_not_init) {
         if (!dtls->t_shake) {
             dtls->t_shake = htimer_add(io->loop, on_shakehand_timeout, 1000, 1);
             hevent_set_userdata(dtls->t_shake, dtls);

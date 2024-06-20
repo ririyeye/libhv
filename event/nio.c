@@ -178,7 +178,6 @@ accept_error:
     // hio_close(io);
 }
 
-void set_dtls_ctx(hio_t* io);
 
 static void nio_connect(hio_t* io) {
     // printd("nio_connect connfd=%d\n", io->fd);
@@ -214,18 +213,18 @@ static void nio_connect(hio_t* io) {
                     io->error = ERR_NEW_SSL_CTX;
                     goto connect_error;
                 }
-                hssl_t ssl;
-                if(io->io_type == HIO_TYPE_SSL) {
-                    ssl = hssl_new(ssl_ctx, io->fd);
-                    if (ssl == NULL) {
-                        io->error = ERR_NEW_SSL;
-                        goto connect_error;
-                    }
-                    io->ssl = ssl;
-                } else {
-                    set_dtls_ctx(io);
+                hssl_t ssl = hssl_new(ssl_ctx, io->fd);
+                if (ssl == NULL) {
+                    io->error = ERR_NEW_SSL;
+                    goto connect_error;
+                }
+
+                io->ssl = ssl;
+                if (io->io_type == HIO_TYPE_DTLS_CONECT) {
+                    set_dtls_ctx_fd(io);
                 }
             }
+
             if (io->hostname) {
                 hssl_set_sni_hostname(io->ssl, io->hostname);
             }
@@ -446,7 +445,7 @@ disconnect:
 
 static void hio_handle_events(hio_t* io) {
     if ((io->events & HV_READ) && (io->revents & HV_READ)) {
-        if (io->accept) {
+        if (io->accept && io->io_type != HIO_TYPE_DTLS_ACCEPT) {
             nio_accept(io);
         }
         else {

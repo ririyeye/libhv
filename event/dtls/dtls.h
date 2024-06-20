@@ -26,11 +26,10 @@ typedef struct dtls_s {
     int mtu;
 } dtls_t;
 
-// NOTE: dtls_create in hio_get_dtls
 void dtls_release(dtls_t* dtls);
 
 int hssl_dtls_read_accept(hio_t *io, void* buf, size_t len);
-
+void set_dtls_ctx_fd(hio_t* io);
 #endif
 
 #endif // HV_DTLS_H_

@@ -104,7 +104,10 @@ void hssl_ctx_free(hssl_ctx_t ssl_ctx) {
 hssl_t hssl_new(hssl_ctx_t ssl_ctx, int fd) {
     SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
     if (ssl == NULL) return NULL;
-    SSL_set_fd(ssl, fd);
+
+    if(!SSL_is_dtls(ssl)) {
+        SSL_set_fd(ssl, fd);
+    }
     return ssl;
 }
 
@@ -192,20 +195,6 @@ int hssl_ctx_set_alpn_protos(hssl_ctx_t ssl_ctx, const unsigned char* protos, un
     ret = 0;
 #endif
     return ret;
-}
-
-hssl_t hssl_new_dtls(hssl_ctx_t ssl_ctx) {
-    SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
-    if (ssl == NULL) return NULL;
-
-    return ssl;
-}
-
-void hssl_free_dtls(hssl_t ssl) {
-    if (ssl) {
-        SSL_free((SSL*)ssl);
-        ssl = NULL;
-    }
 }
 
 #endif // WITH_OPENSSL
