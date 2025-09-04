@@ -43,6 +43,7 @@ typedef struct {
     const char* ca_path;
     short       verify_peer;
     short       endpoint; // HSSL_SERVER / HSSL_CLIENT
+    int         dtlsflg;  // 1 if DTLS
 } hssl_ctx_opt_t, hssl_ctx_init_param_t;
 
 BEGIN_EXTERN_C

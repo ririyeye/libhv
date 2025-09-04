@@ -105,6 +105,8 @@ typedef enum {
     HIO_TYPE_UDP        = 0x00001000,
     HIO_TYPE_KCP        = 0x00002000,
     HIO_TYPE_DTLS       = 0x00010000,
+    HIO_TYPE_DTLS_ACCEPT= 0x00020000 | HIO_TYPE_DTLS,
+    HIO_TYPE_DTLS_CONECT= 0x00040000 | HIO_TYPE_DTLS,
     HIO_TYPE_SOCK_DGRAM = 0x000FF000,
 
     HIO_TYPE_TCP        = 0x00100000,
@@ -440,6 +442,8 @@ HV_EXPORT hio_t* hloop_create_ssl_client (hloop_t* loop, const char* host, int p
 // @udp_server: hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_SERVER_SIDE)
 // @see examples/udp_echo_server.c
 HV_EXPORT hio_t* hloop_create_udp_server (hloop_t* loop, const char* host, int port);
+HV_EXPORT hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port, haccept_cb accept_cb);
+HV_EXPORT hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port, hconnect_cb connect_cb, hclose_cb close_cb);
 
 // @udp_server: hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE)
 // @see examples/nc.c
@@ -671,6 +675,10 @@ typedef enum {
 
 //-----------------rudp---------------------------------------------
 #if WITH_KCP
+#define WITH_RUDP 1
+#endif
+#if WITH_DTLS && !defined(WITH_RUDP)
+// Enable rudp layer for DTLS per-peer state tracking even without KCP
 #define WITH_RUDP 1
 #endif
 

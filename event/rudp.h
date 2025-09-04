@@ -12,6 +12,10 @@
 #include "kcp/hkcp.h"
 #endif
 
+#if WITH_DTLS
+#include "dtls/dtls.h"
+#endif
+
 typedef struct rudp_s {
     struct rb_root  rb_root;
     hmutex_t        mutex;
@@ -24,6 +28,9 @@ typedef struct rudp_entry_s {
     hio_t*          io;
 #if WITH_KCP
     kcp_t           kcp;
+#endif
+#if WITH_DTLS
+    dtls_t          dtls;
 #endif
 } rudp_entry_t;
 

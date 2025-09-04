@@ -49,6 +49,28 @@ cc_binary(
     deps = ["//:hv"]
 )
 
+# DTLS examples (guarded by features in CMake normally; Bazel users enable via defines)
+cc_binary(
+    name = "dtls_echo_server",
+    srcs = ["dtls_echo_server.c"],
+    deps = ["//:hv"],
+)
+cc_binary(
+    name = "dtls_echo_client",
+    srcs = ["dtls_echo_client.c"],
+    deps = ["//:hv"],
+)
+cc_binary(
+    name = "dtls_chat_server",
+    srcs = ["dtls_chat_server.c"],
+    deps = ["//:hv"],
+)
+cc_binary(
+    name = "dtls_chat_client",
+    srcs = ["dtls_chat_client.c"],
+    deps = ["//:hv"],
+)
+
 cc_binary(
     name = "tcp_proxy_server",
     srcs = ["tcp_proxy_server.c"],

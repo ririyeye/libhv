@@ -99,4 +99,6 @@
 #define WITH_WEPOLL     1
 /* #undef WITH_KCP */
 
+/* #undef WITH_DTLS */
+
 #endif // HV_CONFIG_H_

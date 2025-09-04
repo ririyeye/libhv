@@ -33,7 +33,7 @@ but simpler api and richer protocols.
 - TCP supports heartbeat, reconnect, upstream, MultiThread-safe write and close, etc.
 - Built-in common unpacking modes (FixedLength, Delimiter, LengthField)
 - RUDP support: WITH_KCP
-- SSL/TLS support: (via WITH_OPENSSL or WITH_GNUTLS or WITH_MBEDTLS)
+- SSL/TLS/DTLS support: (TLS via WITH_OPENSSL|WITH_GNUTLS|WITH_MBEDTLS, DTLS via WITH_OPENSSL+WITH_DTLS)
 - HTTP client/server (support https http1/x http2 grpc)
 - HTTP supports static service, indexof service, forward/reverse proxy service, sync/async API handler
 - HTTP supports RESTful, router, middleware, keep-alive, chunked, SSE, etc.
@@ -113,6 +113,10 @@ bin/curl -v -X DELETE localhost:8080/group/test/user/123
 
 # benchmark
 bin/wrk -c 1000 -d 10 -t 4 http://127.0.0.1:8080/
+
+# dtls echo quick test (requires build WITH_OPENSSL=ON WITH_DTLS=ON)
+bin/dtls_echo_server 8443 &
+bin/dtls_echo_client 127.0.0.1 8443
 ```
 
 ### TCP

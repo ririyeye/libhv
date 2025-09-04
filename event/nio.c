@@ -6,6 +6,10 @@
 #include "hlog.h"
 #include "herr.h"
 #include "hthread.h"
+#if WITH_DTLS
+#include "dtls/dtls.h"
+int hssl_dtls_read_accept(hio_t* io, void* buf, size_t len);
+#endif
 
 static void __connect_timeout_cb(htimer_t* timer) {
     hio_t* io = (hio_t*)timer->privdata;
@@ -93,6 +97,9 @@ static void ssl_client_handshake(hio_t* io) {
         // handshake finish
         hio_del(io, HV_READ);
         printd("ssl handshake finished.\n");
+        if (io->io_type == HIO_TYPE_DTLS_CONECT) {
+            io->io_type = HIO_TYPE_DTLS;
+        }
         __connect_cb(io);
     }
     else if (ret == HSSL_WANT_READ) {
@@ -250,6 +257,31 @@ static int __nio_read(hio_t* io, void* buf, int len) {
     case HIO_TYPE_SSL:
         nread = hssl_read(io->ssl, buf, len);
         break;
+#if WITH_DTLS
+    case HIO_TYPE_DTLS_ACCEPT: {
+        // server-side: initial UDP packets drive DTLS accept state machine
+        socklen_t addrlen = sizeof(sockaddr_u);
+        nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
+        if (nread > 0) {
+            nread = hssl_dtls_read_accept(io, buf, nread); // returns -1 until handshake completes
+        }
+        break;
+    }
+    case HIO_TYPE_DTLS_CONECT: {
+        // client-side: perform handshake progression then read decrypted data
+        if (io->ssl) {
+            ssl_client_handshake(io);
+            nread = hssl_read(io->ssl, buf, len);
+        } else {
+            nread = -1;
+        }
+        break;
+    }
+    case HIO_TYPE_DTLS: {
+        nread = hssl_read(io->ssl, buf, len);
+        break;
+    }
+#endif // WITH_DTLS
     case HIO_TYPE_TCP:
         nread = recv(io->fd, buf, len, 0);
         break;
@@ -275,6 +307,16 @@ static int __nio_write(hio_t* io, const void* buf, int len, struct sockaddr* add
     case HIO_TYPE_SSL:
         nwrite = hssl_write(io->ssl, buf, len);
         break;
+#if WITH_DTLS
+    case HIO_TYPE_DTLS_ACCEPT:
+        // cannot write application data during server handshake stage
+        nwrite = -1;
+        break;
+    case HIO_TYPE_DTLS_CONECT: // fallthrough
+    case HIO_TYPE_DTLS:
+        nwrite = hssl_write(io->ssl, buf, len);
+        break;
+#endif
     case HIO_TYPE_TCP:
     {
         int flag = 0;

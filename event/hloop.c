@@ -1091,6 +1091,23 @@ hio_t* hloop_create_udp_client(hloop_t* loop, const char* host, int port) {
     return hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE);
 }
 
+hio_t* hloop_create_dtls_server(hloop_t* loop, const char* host, int port, haccept_cb accept_cb) {
+    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS_ACCEPT, HIO_SERVER_SIDE);
+    if (io == NULL) return NULL;
+    hio_setcb_accept(io, accept_cb);
+    if (hio_accept(io) != 0) return NULL;
+    return io;
+}
+
+hio_t* hloop_create_dtls_client(hloop_t* loop, const char* host, int port, hconnect_cb connect_cb, hclose_cb close_cb) {
+    hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_DTLS_CONECT, HIO_CLIENT_SIDE);
+    if (io == NULL) return NULL;
+    hio_setcb_connect(io, connect_cb);
+    hio_setcb_close(io, close_cb);
+    if (hio_connect(io) != 0) return NULL;
+    return io;
+}
+
 int hio_create_pipe(hloop_t* loop, hio_t* pipeio[2]) {
     int pipefd[2];
     hio_type_e type = HIO_TYPE_PIPE;

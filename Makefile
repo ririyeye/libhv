@@ -7,6 +7,9 @@ CORE_SRCDIRS=. base ssl event
 ifeq ($(WITH_KCP), yes)
 CORE_SRCDIRS += event/kcp
 endif
+ifeq ($(WITH_DTLS), yes)
+CORE_SRCDIRS += event/dtls
+endif
 
 LIBHV_SRCDIRS = $(CORE_SRCDIRS) util
 LIBHV_HEADERS = hv.h hconfig.h hexport.h

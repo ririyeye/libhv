@@ -57,7 +57,7 @@
 - TCP支持心跳、重连、转发、多线程安全write和close等特性
 - 内置常见的拆包模式（固定包长、分界符、头部长度字段）
 - 可靠UDP支持: WITH_KCP
-- SSL/TLS加密通信（可选WITH_OPENSSL、WITH_GNUTLS、WITH_MBEDTLS）
+- SSL/TLS/DTLS加密通信（TLS可选WITH_OPENSSL|WITH_GNUTLS|WITH_MBEDTLS，DTLS需WITH_OPENSSL+WITH_DTLS）
 - HTTP服务端/客户端（支持https http1/x http2 grpc）
 - HTTP支持静态文件服务、目录服务、正向/反向代理服务、同步/异步API处理器
 - HTTP支持RESTful风格、路由、中间件、keep-alive长连接、chunked分块、SSE等特性
@@ -142,6 +142,10 @@ bin/curl -v -X DELETE localhost:8080/group/test/user/123
 
 # 压力测试
 bin/wrk -c 1000 -d 10 -t 4 http://127.0.0.1:8080/
+
+# dtls echo quick test (requires build WITH_OPENSSL=ON WITH_DTLS=ON)
+bin/dtls_echo_server 8443 &
+bin/dtls_echo_client 127.0.0.1 8443
 ```
 
 ### TCP

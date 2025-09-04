@@ -45,6 +45,18 @@ target_link_libraries(tcp_echo_server ${HV_LIBRARIES})
 add_executable(tcp_chat_server tcp_chat_server.c)
 target_link_libraries(tcp_chat_server ${HV_LIBRARIES})
 
+# DTLS standalone examples
+if (WITH_DTLS AND WITH_OPENSSL)
+    add_executable(dtls_echo_server dtls_echo_server.c)
+    target_link_libraries(dtls_echo_server ${HV_LIBRARIES})
+    add_executable(dtls_echo_client dtls_echo_client.c)
+    target_link_libraries(dtls_echo_client ${HV_LIBRARIES})
+    add_executable(dtls_chat_server dtls_chat_server.c)
+    target_link_libraries(dtls_chat_server ${HV_LIBRARIES})
+    add_executable(dtls_chat_client dtls_chat_client.c)
+    target_link_libraries(dtls_chat_client ${HV_LIBRARIES})
+endif()
+
 add_executable(tcp_proxy_server tcp_proxy_server.c)
 target_link_libraries(tcp_proxy_server ${HV_LIBRARIES})
 

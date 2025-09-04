@@ -25,11 +25,20 @@ hssl_ctx_t hssl_ctx_new(hssl_ctx_opt_t* param) {
         s_initialized = 1;
     }
 
+    SSL_CTX* ctx = NULL;
+    if(param && param->dtlsflg) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-    SSL_CTX* ctx = SSL_CTX_new(SSLv23_method());
+    ctx = SSL_CTX_new(DTLS_method());
 #else
-    SSL_CTX* ctx = SSL_CTX_new(TLS_method());
+    ctx = SSL_CTX_new(DTLS_method());
 #endif
+    } else {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    ctx = SSL_CTX_new(SSLv23_method());
+#else
+    ctx = SSL_CTX_new(TLS_method());
+#endif
+    }
     if (ctx == NULL) return NULL;
     int mode = SSL_VERIFY_NONE;
     const char* ca_file = NULL;
@@ -95,7 +104,9 @@ void hssl_ctx_free(hssl_ctx_t ssl_ctx) {
 hssl_t hssl_new(hssl_ctx_t ssl_ctx, int fd) {
     SSL* ssl = SSL_new((SSL_CTX*)ssl_ctx);
     if (ssl == NULL) return NULL;
-    SSL_set_fd(ssl, fd);
+    if(!SSL_is_dtls(ssl)) {
+        SSL_set_fd(ssl, fd);
+    }
     return ssl;
 }
 

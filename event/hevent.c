@@ -450,12 +450,16 @@ void hio_set_peeraddr (hio_t* io, struct sockaddr* addr, int addrlen) {
 }
 
 int hio_enable_ssl(hio_t* io) {
-    io->io_type = HIO_TYPE_SSL;
+    if(io->io_type & HIO_TYPE_UDP) {
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
+    } else {
+        io->io_type = HIO_TYPE_SSL;
+    }
     return 0;
 }
 
 bool hio_is_ssl(hio_t* io) {
-    return io->io_type == HIO_TYPE_SSL;
+    return io->io_type == HIO_TYPE_SSL || io->io_type == HIO_TYPE_DTLS;
 }
 
 hssl_t hio_get_ssl(hio_t* io) {
@@ -467,18 +471,30 @@ hssl_ctx_t hio_get_ssl_ctx(hio_t* io) {
 }
 
 int hio_set_ssl(hio_t* io, hssl_t ssl) {
-    io->io_type = HIO_TYPE_SSL;
+    if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
+    } else {
+        io->io_type = HIO_TYPE_SSL;
+    }
     io->ssl = ssl;
     return 0;
 }
 
 int hio_set_ssl_ctx(hio_t* io, hssl_ctx_t ssl_ctx) {
-    io->io_type = HIO_TYPE_SSL;
+    if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
+        io->io_type = HIO_TYPE_DTLS_ACCEPT;
+    }
+    else {
+        io->io_type = HIO_TYPE_SSL;
+    }
     io->ssl_ctx = ssl_ctx;
     return 0;
 }
 
 int hio_new_ssl_ctx(hio_t* io, hssl_ctx_opt_t* opt) {
+    if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
+        opt->dtlsflg = 1;
+    }
     hssl_ctx_t ssl_ctx = hssl_ctx_new(opt);
     if (ssl_ctx == NULL) return ERR_NEW_SSL_CTX;
     io->alloced_ssl_ctx = 1;
