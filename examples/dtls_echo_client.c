@@ -2,7 +2,7 @@
  * dtls echo client
  *
  * Build: cmake -DWITH_OPENSSL=ON -DWITH_DTLS=ON .. && make
- * Run:   bin/dtls_echo_client 127.0.0.1 12345 "hello dtls" 
+ * Run:   bin/dtls_echo_client 127.0.0.1 12345 "hello dtls"
  */
 
 #include "hloop.h"
@@ -32,18 +32,28 @@ static void on_connect(hio_t* io) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 3) { printf("Usage: %s host port [msg]\n", argv[0]); return -1; }
+    if (argc < 3) {
+        printf("Usage: %s host port [msg]\n", argv[0]);
+        return -1;
+    }
     const char* host = argv[1];
     int port = atoi(argv[2]);
     if (argc > 3) g_msg = argv[3];
 
     hloop_t* loop = hloop_new(0);
     hio_t* io = hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE);
-    if (!io) { fprintf(stderr, "socket create failed\n"); return -2; }
+    if (!io) {
+        fprintf(stderr, "socket create failed\n");
+        return -2;
+    }
 
-    hssl_ctx_opt_t opt; memset(&opt, 0, sizeof(opt));
+    hssl_ctx_opt_t opt;
+    memset(&opt, 0, sizeof(opt));
     opt.endpoint = HSSL_CLIENT;
-    if (hio_new_ssl_ctx(io, &opt) != 0) { fprintf(stderr, "hssl ctx failed\n"); return -3; }
+    if (hio_new_ssl_ctx(io, &opt) != 0) {
+        fprintf(stderr, "hssl ctx failed\n");
+        return -3;
+    }
     hio_enable_ssl(io); // will treat UDP as DTLS
 
     hio_setcb_connect(io, on_connect);

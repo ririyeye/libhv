@@ -472,8 +472,12 @@ hssl_ctx_t hio_get_ssl_ctx(hio_t* io) {
 
 int hio_set_ssl(hio_t* io, hssl_t ssl) {
     if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
-        io->io_type = HIO_TYPE_DTLS_ACCEPT;
-    } else {
+        // Preserve DTLS client connect state; only convert plain UDP to ACCEPT role
+        if (io->io_type != HIO_TYPE_DTLS_CONECT) {
+            io->io_type = HIO_TYPE_DTLS_ACCEPT;
+        }
+    }
+    else {
         io->io_type = HIO_TYPE_SSL;
     }
     io->ssl = ssl;
@@ -482,7 +486,9 @@ int hio_set_ssl(hio_t* io, hssl_t ssl) {
 
 int hio_set_ssl_ctx(hio_t* io, hssl_ctx_t ssl_ctx) {
     if (io->io_type & HIO_TYPE_SOCK_DGRAM) {
-        io->io_type = HIO_TYPE_DTLS_ACCEPT;
+        if (io->io_type != HIO_TYPE_DTLS_CONECT) {
+            io->io_type = HIO_TYPE_DTLS_ACCEPT;
+        }
     }
     else {
         io->io_type = HIO_TYPE_SSL;

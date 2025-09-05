@@ -193,7 +193,7 @@ static void nio_connect(hio_t* io) {
         addrlen = sizeof(sockaddr_u);
         getsockname(io->fd, io->localaddr, &addrlen);
 
-        if (io->io_type == HIO_TYPE_SSL) {
+        if (io->io_type == HIO_TYPE_SSL || io->io_type == HIO_TYPE_DTLS_CONECT) {
             if (io->ssl == NULL) {
                 // io->ssl_ctx > g_ssl_ctx > hssl_ctx_new
                 hssl_ctx_t ssl_ctx = NULL;
@@ -215,6 +215,12 @@ static void nio_connect(hio_t* io) {
                     goto connect_error;
                 }
                 io->ssl = ssl;
+#if WITH_DTLS
+                // For DTLS client, need to attach datagram BIO manually since hssl_new skips SSL_set_fd for DTLS
+                if (io->io_type == HIO_TYPE_DTLS_CONECT) {
+                    set_dtls_ctx_fd(io);
+                }
+#endif
             }
             if (io->hostname) {
                 hssl_set_sni_hostname(io->ssl, io->hostname);

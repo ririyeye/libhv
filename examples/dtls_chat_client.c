@@ -22,7 +22,10 @@ static void on_recv(hio_t* io, void* buf, int len) {
 static void stdin_read_cb(hio_t* io, void* buf, int len) {
     hio_t* peer = (hio_t*)hevent_userdata(io);
     if (!peer) return;
-    if (len <= 0) { hio_close(peer); return; }
+    if (len <= 0) {
+        hio_close(peer);
+        return;
+    }
     hio_write(peer, buf, len);
 }
 
@@ -41,14 +44,26 @@ static void on_connect(hio_t* io) {
 }
 
 int main(int argc, char** argv) {
-    if (argc < 3) { printf("Usage: %s host port\n", argv[0]); return -1; }
-    const char* host = argv[1]; int port = atoi(argv[2]);
+    if (argc < 3) {
+        printf("Usage: %s host port\n", argv[0]);
+        return -1;
+    }
+    const char* host = argv[1];
+    int port = atoi(argv[2]);
     hloop_t* loop = hloop_new(0);
     hio_t* io = hloop_create_dtls_client(loop, host, port, on_connect, on_close);
-    if (!io) { fprintf(stderr, "create dtls client failed\n"); return -2; }
-    hssl_ctx_opt_t opt; memset(&opt, 0, sizeof(opt));
-    opt.endpoint = HSSL_CLIENT; opt.verify_peer = 0; // for test
-    if (hio_new_ssl_ctx(io, &opt) != 0) { fprintf(stderr, "ssl ctx failed\n"); return -3; }
+    if (!io) {
+        fprintf(stderr, "create dtls client failed\n");
+        return -2;
+    }
+    hssl_ctx_opt_t opt;
+    memset(&opt, 0, sizeof(opt));
+    opt.endpoint = HSSL_CLIENT;
+    opt.verify_peer = 0; // for test
+    if (hio_new_ssl_ctx(io, &opt) != 0) {
+        fprintf(stderr, "ssl ctx failed\n");
+        return -3;
+    }
     hloop_run(loop);
     hloop_free(&loop);
     return 0;
