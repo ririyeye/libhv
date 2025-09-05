@@ -103,6 +103,10 @@ static void ssl_client_handshake(hio_t* io) {
         __connect_cb(io);
     }
     else if (ret == HSSL_WANT_READ) {
+        // For DTLS client, reset handshake timeout waiting for next flight
+        if (io->io_type == HIO_TYPE_DTLS_CONECT && io->connect_timer) {
+            htimer_reset(io->connect_timer, io->connect_timeout ? io->connect_timeout : 1000);
+        }
         if ((io->events & HV_READ) == 0) {
             hio_add(io, ssl_client_handshake, HV_READ);
         }
@@ -219,6 +223,12 @@ static void nio_connect(hio_t* io) {
                 // For DTLS client, need to attach datagram BIO manually since hssl_new skips SSL_set_fd for DTLS
                 if (io->io_type == HIO_TYPE_DTLS_CONECT) {
                     set_dtls_ctx_fd(io);
+                    // setup 1s handshake timeout if server silent
+                    if (io->connect_timer == NULL) {
+                        io->connect_timeout = 1000; // ms
+                        io->connect_timer = htimer_add(io->loop, __connect_timeout_cb, io->connect_timeout, 1);
+                        io->connect_timer->privdata = io;
+                    }
                 }
 #endif
             }
