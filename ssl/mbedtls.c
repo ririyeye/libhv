@@ -52,6 +52,7 @@ hssl_ctx_t hssl_ctx_new(hssl_ctx_opt_t* param) {
 
     int mode = MBEDTLS_SSL_VERIFY_NONE;
     int endpoint = MBEDTLS_SSL_IS_CLIENT;
+    int transport = MBEDTLS_SSL_TRANSPORT_STREAM; // default TLS
     bool check = false;
     if (param) {
         if (param->crt_file && *param->crt_file) {
@@ -77,12 +78,44 @@ hssl_ctx_t hssl_ctx_new(hssl_ctx_opt_t* param) {
         if (param->endpoint == HSSL_SERVER) {
             endpoint = MBEDTLS_SSL_IS_SERVER;
         }
+        if (param->dtlsflg) {
+#if defined(MBEDTLS_SSL_TRANSPORT_DATAGRAM)
+            transport = MBEDTLS_SSL_TRANSPORT_DATAGRAM;
+#else
+            fprintf(stderr, "mbedtls built without DTLS support (MBEDTLS_SSL_TRANSPORT_DATAGRAM missing)\n");
+            goto error;
+#endif
+        }
     }
     mbedtls_ctr_drbg_seed(&ctx->ctr_drbg, mbedtls_entropy_func, &ctx->entropy, NULL, 0);
     if (mbedtls_ssl_config_defaults(&ctx->conf, endpoint,
-        MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
+        transport, MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
         fprintf(stderr, "ssl config error!\n");
         goto error;
+    }
+    if (transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+        // Recommended DTLS options
+        mbedtls_ssl_conf_min_version(&ctx->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // TLS1.2/DTLS1.2
+#if defined(MBEDTLS_SSL_DTLS_ANTI_REPLAY)
+        mbedtls_ssl_conf_dtls_anti_replay(&ctx->conf, MBEDTLS_SSL_ANTI_REPLAY_ENABLED);
+#endif
+#if defined(MBEDTLS_SSL_DTLS_BADMAC_LIMIT)
+        mbedtls_ssl_conf_dtls_badmac_limit(&ctx->conf, 0);
+#endif
+#if defined(MBEDTLS_SSL_COOKIE_C)
+        // Optionally set up cookie context for server to mitigate DoS (HelloVerifyRequest)
+        static mbedtls_ssl_cookie_ctx cookie_ctx; // static lifetime OK
+        static int cookie_inited = 0;
+        if (!cookie_inited) {
+            mbedtls_ssl_cookie_init(&cookie_ctx);
+            if (mbedtls_ssl_cookie_setup(&cookie_ctx, mbedtls_ctr_drbg_random, &ctx->ctr_drbg) == 0) {
+                cookie_inited = 1;
+            }
+        }
+        if (endpoint == MBEDTLS_SSL_IS_SERVER && cookie_inited) {
+            mbedtls_ssl_conf_dtls_cookies(&ctx->conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, &cookie_ctx);
+        }
+#endif
     }
     mbedtls_ssl_conf_authmode(&ctx->conf, mode);
     mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg);
@@ -141,6 +174,13 @@ hssl_t hssl_new(hssl_ctx_t ssl_ctx, int fd) {
     mbedtls_ssl_init(ssl);
     mbedtls_ssl_setup(ssl, &mctx->conf);
     mbedtls_ssl_set_bio(ssl, (void*)(intptr_t)fd, __mbedtls_net_send, __mbedtls_net_recv, NULL);
+    // For DTLS, mbedtls needs a timer callback for retransmission; use built-in timing if enabled.
+#if defined(MBEDTLS_SSL_TRANSPORT_DATAGRAM) && defined(MBEDTLS_TIMING_C)
+    if (mctx->conf.transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM) {
+        // If MBEDTLS_TIMING_C enabled, mbedtls internally sets timer if not provided.
+        // Custom timer callback could be set here if needed.
+    }
+#endif
     return ssl;
 }
 

@@ -10,6 +10,8 @@
 #ifdef WITH_OPENSSL
 #include "openssl/ssl.h"
 #include "openssl/err.h"
+#elif defined(WITH_MBEDTLS)
+#include "mbedtls/ssl.h"
 #endif
 
 typedef enum {
