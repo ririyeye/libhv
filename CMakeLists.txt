@@ -31,6 +31,11 @@ option(WITH_MBEDTLS "with mbedtls library" OFF)
 option(WITH_DTLS "with dtls support" OFF)
 option(WITH_KCP "compile event/kcp" OFF)
 
+# DTLS backend requirement guard
+if (WITH_DTLS AND (NOT WITH_OPENSSL) AND (NOT WITH_MBEDTLS))
+    message(FATAL_ERROR "WITH_DTLS requires enabling WITH_OPENSSL=ON or WITH_MBEDTLS=ON")
+endif()
+
 if(WIN32 OR MINGW)
     option(WITH_WEPOLL "compile event/wepoll -> use iocp" ON)
     option(ENABLE_WINDUMP "Windows MiniDumpWriteDump" OFF)

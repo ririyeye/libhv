@@ -1,7 +1,8 @@
 /*
  * dtls echo server
  *
- * Build: cmake -DWITH_OPENSSL=ON -DWITH_DTLS=ON .. && make
+ * Build: cmake -DWITH_DTLS=ON -DWITH_OPENSSL=ON .. && make
+ *     or cmake -DWITH_DTLS=ON -DWITH_MBEDTLS=ON .. && make
  * Run:   bin/dtls_echo_server 12345
  * Test:  (no dedicated client) use dtls_echo_client or dtls_client_test
  */
@@ -11,7 +12,7 @@
 #include "hsocket.h"
 
 #if !WITH_DTLS
-#error "Rebuild with -DWITH_OPENSSL=ON -DWITH_DTLS=ON to use this example"
+#error "Rebuild with -DWITH_DTLS=ON and (WITH_OPENSSL=ON or WITH_MBEDTLS=ON) to use this example"
 #endif
 
 static void on_close(hio_t* io) {

@@ -1,6 +1,7 @@
 /*
  * dtls chat server (broadcast style)
- * Build: cmake -DWITH_OPENSSL=ON -DWITH_DTLS=ON .. && make
+ * Build: cmake -DWITH_DTLS=ON -DWITH_OPENSSL=ON .. && make
+ *    or  cmake -DWITH_DTLS=ON -DWITH_MBEDTLS=ON .. && make
  * Run:   bin/dtls_chat_server 12345
  * Client: use dtls_chat_client or modify nc (no native dtls)
  */

@@ -45,8 +45,8 @@ target_link_libraries(tcp_echo_server ${HV_LIBRARIES})
 add_executable(tcp_chat_server tcp_chat_server.c)
 target_link_libraries(tcp_chat_server ${HV_LIBRARIES})
 
-# DTLS standalone examples
-if (WITH_DTLS AND WITH_OPENSSL)
+# DTLS standalone examples (supported when DTLS enabled with OpenSSL or MbedTLS)
+if (WITH_DTLS AND (WITH_OPENSSL OR WITH_MBEDTLS))
     add_executable(dtls_echo_server dtls_echo_server.c)
     target_link_libraries(dtls_echo_server ${HV_LIBRARIES})
     add_executable(dtls_echo_client dtls_echo_client.c)

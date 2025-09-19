@@ -1,7 +1,8 @@
 /*
  * dtls echo client
  *
- * Build: cmake -DWITH_OPENSSL=ON -DWITH_DTLS=ON .. && make
+ * Build: cmake -DWITH_DTLS=ON -DWITH_OPENSSL=ON .. && make
+ *     or cmake -DWITH_DTLS=ON -DWITH_MBEDTLS=ON .. && make
  * Run:   bin/dtls_echo_client 127.0.0.1 12345 "hello dtls"
  */
 
@@ -10,7 +11,7 @@
 #include "hsocket.h"
 
 #if !WITH_DTLS
-#error "Rebuild with -DWITH_OPENSSL=ON -DWITH_DTLS=ON to use this example"
+#error "Rebuild with -DWITH_DTLS=ON and (WITH_OPENSSL=ON or WITH_MBEDTLS=ON) to use this example"
 #endif
 
 static const char* g_msg = "hello";
