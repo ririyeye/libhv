@@ -11,6 +11,8 @@ list(APPEND EXAMPLES
     tcp_proxy_server
     udp_echo_server
     udp_proxy_server
+    dtls_echo_server
+    dtls_client
     socks5_proxy_server
     jsonrpc_client
     jsonrpc_server
@@ -53,6 +55,12 @@ target_link_libraries(udp_echo_server ${HV_LIBRARIES})
 
 add_executable(udp_proxy_server udp_proxy_server.c)
 target_link_libraries(udp_proxy_server ${HV_LIBRARIES})
+
+add_executable(dtls_echo_server dtls_echo_server.c)
+target_link_libraries(dtls_echo_server ${HV_LIBRARIES})
+
+add_executable(dtls_client dtls_client.c)
+target_link_libraries(dtls_client ${HV_LIBRARIES})
 
 add_executable(socks5_proxy_server socks5_proxy_server.c)
 target_link_libraries(socks5_proxy_server ${HV_LIBRARIES})

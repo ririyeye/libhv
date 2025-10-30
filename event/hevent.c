@@ -458,6 +458,15 @@ bool hio_is_ssl(hio_t* io) {
     return io->io_type == HIO_TYPE_SSL;
 }
 
+int hio_enable_dtls(hio_t* io) {
+    io->io_type = HIO_TYPE_DTLS;
+    return 0;
+}
+
+bool hio_is_dtls(hio_t* io) {
+    return io->io_type == HIO_TYPE_DTLS;
+}
+
 hssl_t hio_get_ssl(hio_t* io) {
     return io->ssl;
 }

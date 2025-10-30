@@ -327,6 +327,10 @@ HV_EXPORT hssl_ctx_t hio_get_ssl_ctx(hio_t* io);
 HV_EXPORT int         hio_set_hostname(hio_t* io, const char* hostname);
 HV_EXPORT const char* hio_get_hostname(hio_t* io);
 
+// Enable DTLS is so easy :)
+HV_EXPORT int  hio_enable_dtls(hio_t* io);
+HV_EXPORT bool hio_is_dtls(hio_t* io);
+
 // connect timeout => hclose_cb
 HV_EXPORT void hio_set_connect_timeout(hio_t* io, int timeout_ms DEFAULT(HIO_DEFAULT_CONNECT_TIMEOUT));
 // close timeout => hclose_cb
@@ -444,6 +448,14 @@ HV_EXPORT hio_t* hloop_create_udp_server (hloop_t* loop, const char* host, int p
 // @udp_server: hio_create_socket(loop, host, port, HIO_TYPE_UDP, HIO_CLIENT_SIDE)
 // @see examples/nc.c
 HV_EXPORT hio_t* hloop_create_udp_client (hloop_t* loop, const char* host, int port);
+
+// @dtls_server: hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_SERVER_SIDE)
+// @see examples/dtls_echo_server.c
+HV_EXPORT hio_t* hloop_create_dtls_server (hloop_t* loop, const char* host, int port);
+
+// @dtls_client: hio_create_socket(loop, host, port, HIO_TYPE_DTLS, HIO_CLIENT_SIDE)
+// @see examples/dtls_client.c
+HV_EXPORT hio_t* hloop_create_dtls_client (hloop_t* loop, const char* host, int port);
 
 //-----------------pipe---------------------------------------------
 // @see examples/pipe_test.c
