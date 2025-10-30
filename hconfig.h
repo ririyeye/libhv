@@ -98,5 +98,6 @@
 
 /* #undef WITH_WEPOLL */
 /* #undef WITH_KCP */
+#define WITH_DTLS      1
 
 #endif // HV_CONFIG_H_

@@ -4,6 +4,7 @@
 #include "hloop.h"
 #include "iowatcher.h"
 #include "rudp.h"
+#include "dtls.h"
 
 #include "hbuf.h"
 #include "hmutex.h"
@@ -189,6 +190,10 @@ struct hio_s {
 #if WITH_KCP
     kcp_setting_t*  kcp_setting;
 #endif
+#endif
+
+#if WITH_DTLS
+    dtls_ctx_t      dtls_ctx;
 #endif
 };
 /*

@@ -7,6 +7,10 @@
 #include "herr.h"
 #include "hthread.h"
 
+#ifdef WITH_DTLS
+#include "dtls.h"
+#endif
+
 static void __connect_timeout_cb(htimer_t* timer) {
     hio_t* io = (hio_t*)timer->privdata;
     if (io) {
@@ -253,6 +257,35 @@ static int __nio_read(hio_t* io, void* buf, int len) {
     case HIO_TYPE_TCP:
         nread = recv(io->fd, buf, len, 0);
         break;
+#if WITH_DTLS
+    case HIO_TYPE_DTLS:
+    {
+        // First read from socket to get peer address
+        socklen_t addrlen = sizeof(sockaddr_u);
+        nread = recvfrom(io->fd, buf, len, 0, io->peeraddr, &addrlen);
+        if (nread > 0) {
+            // Get or create DTLS session for this peer
+            dtls_session_t* session = hio_get_dtls_session(io, io->peeraddr);
+            if (session->state == DTLS_STATE_INIT) {
+                // Initialize SSL for this session
+                dtls_session_init_ssl(session, io);
+            }
+            if (session->state == DTLS_STATE_HANDSHAKING) {
+                // Continue handshake
+                dtls_session_handshake(session);
+                if (session->state == DTLS_STATE_ESTABLISHED) {
+                    // Flush any pending writes
+                    dtls_session_flush_pending(session);
+                }
+            }
+            if (session->state == DTLS_STATE_ESTABLISHED) {
+                // Decrypt the data
+                nread = dtls_session_read(session, buf, len);
+            }
+        }
+    }
+        break;
+#endif
     case HIO_TYPE_UDP:
     case HIO_TYPE_KCP:
     case HIO_TYPE_IP:
@@ -284,6 +317,28 @@ static int __nio_write(hio_t* io, const void* buf, int len, struct sockaddr* add
         nwrite = send(io->fd, buf, len, flag);
     }
         break;
+#if WITH_DTLS
+    case HIO_TYPE_DTLS:
+    {
+        if (addr == NULL) addr = io->peeraddr;
+        // Get DTLS session for this peer
+        dtls_session_t* session = hio_get_dtls_session(io, addr);
+        if (session->state == DTLS_STATE_INIT) {
+            // Initialize SSL for this session
+            dtls_session_init_ssl(session, io);
+        }
+        // Queue or send through DTLS session
+        // Data will be queued if handshake not complete
+        nwrite = dtls_session_write(session, buf, len);
+        
+        // Update local address if needed
+        if (((sockaddr_u*)io->localaddr)->sin.sin_port == 0) {
+            socklen_t addrlen = sizeof(sockaddr_u);
+            getsockname(io->fd, io->localaddr, &addrlen);
+        }
+    }
+        break;
+#endif
     case HIO_TYPE_UDP:
     case HIO_TYPE_KCP:
     case HIO_TYPE_IP:

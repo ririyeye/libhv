@@ -766,6 +766,12 @@ HV_INLINE void kcp_setting_init_with_fast3_mode(kcp_setting_t* setting) {
 HV_EXPORT int hio_set_kcp(hio_t* io, kcp_setting_t* setting DEFAULT(NULL));
 #endif
 
+//-----------------dtls---------------------------------------------
+#ifdef WITH_DTLS
+// NOTE: hio_close_dtls_session is thread-safe.
+HV_EXPORT int hio_close_dtls_session(hio_t* io, struct sockaddr* peeraddr DEFAULT(NULL));
+#endif
+
 END_EXTERN_C
 
 #endif // HV_LOOP_H_

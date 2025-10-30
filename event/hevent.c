@@ -156,6 +156,12 @@ void hio_ready(hio_t* io) {
         rudp_init(&io->rudp);
     }
 #endif
+
+#if WITH_DTLS
+    if (io->io_type == HIO_TYPE_DTLS) {
+        dtls_ctx_init(&io->dtls_ctx);
+    }
+#endif
 }
 
 void hio_done(hio_t* io) {
@@ -181,6 +187,12 @@ void hio_done(hio_t* io) {
 #if WITH_RUDP
     if ((io->io_type & HIO_TYPE_SOCK_DGRAM) || (io->io_type & HIO_TYPE_SOCK_RAW)) {
         rudp_cleanup(&io->rudp);
+    }
+#endif
+
+#if WITH_DTLS
+    if (io->io_type == HIO_TYPE_DTLS) {
+        dtls_ctx_cleanup(&io->dtls_ctx);
     }
 #endif
 }
