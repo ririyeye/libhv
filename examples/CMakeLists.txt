@@ -102,7 +102,15 @@ if(WITH_EVPP)
     target_compile_definitions(nmap PRIVATE PRINT_DEBUG)
     target_link_libraries(nmap ${HV_LIBRARIES})
 
-    list(APPEND EXAMPLES hmain_test nmap)
+    # dtls_server_test
+    add_executable(dtls_server_test dtls_server_test.cpp)
+    target_link_libraries(dtls_server_test ${HV_LIBRARIES})
+
+    # dtls_client_test
+    add_executable(dtls_client_test dtls_client_test.cpp)
+    target_link_libraries(dtls_client_test ${HV_LIBRARIES})
+
+    list(APPEND EXAMPLES hmain_test nmap dtls_server_test dtls_client_test)
 if(WITH_HTTP)
     include_directories(../http)
 
