@@ -99,7 +99,11 @@ echo "Hello DTLS" | nc -u 127.0.0.1 1234
 ```
 
 ⚠️ **Important:** Once DTLS encryption is implemented (via OpenSSL), this will no longer work as DTLS 
-requires a proper TLS handshake and encrypted communication. You will need to use DTLS-capable clients.
+requires a proper TLS handshake and encrypted communication. You will need to use DTLS-capable clients 
+such as:
+- OpenSSL s_client: `openssl s_client -dtls -connect 127.0.0.1:1234`
+- OpenSSL s_server: `openssl s_server -dtls -accept 1234`
+- Custom DTLS clients built with OpenSSL or other DTLS libraries
 
 ## API Overview
 
@@ -156,11 +160,17 @@ cli.sendto(data, len);
 - C and C++ interfaces
 - Thread-safe operations
 
-### 🔜 To Be Implemented
-- **DTLS Encryption:** Actual TLS handshake and encryption layer
-- **OpenSSL Integration:** DTLS methods from OpenSSL library
-- **Certificate Management:** SSL context configuration for DTLS
-- **Session Management:** DTLS connection state handling
+### 🔜 To Be Implemented (Priority: Medium)
+The following features will be added in future updates. The API infrastructure is designed 
+to support these transparently without requiring changes to user code:
+
+- **DTLS Encryption:** Actual TLS handshake and encryption layer using OpenSSL
+- **OpenSSL Integration:** DTLS_server_method() and DTLS_client_method() from OpenSSL 1.1+
+- **Certificate Management:** SSL context configuration for DTLS (similar to existing SSL support)
+- **Session Management:** DTLS connection state and cookie exchange handling
+
+> 💡 **Note:** The encryption integration follows the same pattern as the existing TCP+SSL 
+> implementation in libhv, ensuring consistency across the library.
 
 ### Notes
 - The API is production-ready and stable
