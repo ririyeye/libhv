@@ -2,7 +2,11 @@
 
 ## Overview
 
-DTLS (Datagram Transport Layer Security) support has been added to libhv with full UDP API compatibility. The DTLS API mirrors the UDP API, making it easy to add secure datagram communication to your applications.
+DTLS (Datagram Transport Layer Security) API infrastructure has been added to libhv with full UDP API compatibility. The DTLS API mirrors the UDP API, providing a familiar interface for secure datagram communication.
+
+> **Current Status:** The DTLS API infrastructure is complete and ready for use. The actual DTLS encryption 
+> layer (TLS handshake and encrypted communication) will be integrated when building with OpenSSL support, 
+> similar to how TLS/SSL works for TCP connections.
 
 ## Features
 
@@ -10,6 +14,7 @@ DTLS (Datagram Transport Layer Security) support has been added to libhv with fu
 - **C and C++ Support**: Both C-style and C++ template-based APIs available
 - **Event Loop Integration**: Seamless integration with libhv's event loop system
 - **Cross-Platform**: Works on all platforms supported by libhv
+- **Encryption Ready**: Infrastructure prepared for OpenSSL DTLS integration
 
 ## C API
 

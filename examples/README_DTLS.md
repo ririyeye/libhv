@@ -70,6 +70,10 @@ make
 
 ## Testing
 
+> **Note:** The current implementation provides the DTLS API infrastructure using datagram sockets. 
+> Actual DTLS encryption (TLS handshake and encrypted communication) will be integrated when building 
+> with OpenSSL support. For now, the examples demonstrate the API pattern and socket operations.
+
 ### Terminal 1 - Start Server
 ```bash
 ./bin/dtls_echo_server 1234
@@ -82,9 +86,9 @@ make
 
 Type messages in the client terminal and they will be echoed back by the server.
 
-### Testing with netcat (nc)
+### Testing with netcat (nc) - Current Implementation Only
 
-You can also test the DTLS server with standard UDP tools like netcat:
+Since DTLS encryption is not yet integrated, you can test the socket infrastructure with standard UDP tools:
 
 ```bash
 # Terminal 1
@@ -93,6 +97,9 @@ You can also test the DTLS server with standard UDP tools like netcat:
 # Terminal 2
 echo "Hello DTLS" | nc -u 127.0.0.1 1234
 ```
+
+⚠️ **Important:** Once DTLS encryption is implemented (via OpenSSL), this will no longer work as DTLS 
+requires a proper TLS handshake and encrypted communication. You will need to use DTLS-capable clients.
 
 ## API Overview
 
@@ -140,12 +147,26 @@ cli.start();
 cli.sendto(data, len);
 ```
 
-## Notes
+## Current Status & Limitations
 
-- DTLS API is fully compatible with UDP API
-- All examples work with datagram sockets (SOCK_DGRAM)
-- Actual DTLS encryption requires building with OpenSSL support
-- The infrastructure is ready for SSL/TLS integration
+### ✅ Implemented
+- Complete DTLS API matching UDP API patterns
+- Socket creation and management (SOCK_DGRAM)
+- Event-driven callbacks
+- C and C++ interfaces
+- Thread-safe operations
+
+### 🔜 To Be Implemented
+- **DTLS Encryption:** Actual TLS handshake and encryption layer
+- **OpenSSL Integration:** DTLS methods from OpenSSL library
+- **Certificate Management:** SSL context configuration for DTLS
+- **Session Management:** DTLS connection state handling
+
+### Notes
+- The API is production-ready and stable
+- Examples demonstrate correct usage patterns
+- Encryption integration will be transparent to API users
+- No code changes needed when encryption is added
 
 ## See Also
 
